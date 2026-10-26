@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>База знаний — Прототип</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f7f9fc;
+        }
+
+        h1 {
+            color: #1F3A5F;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background: #2E74B5;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+            button:hover {
+                background: #1F3A5F;
+            }
+
+        .btn-logout {
+            background: #c0392b;
+        }
+
+            .btn-logout:hover {
+                background: #8b2d2d;
+            }
+
+        #result, #error, #auth-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+            white-space: pre-wrap;
+        }
+
+        #result {
+            background: #e8f4ea;
+            color: #2d5a2d;
+        }
+
+        #error {
+            background: #fdeaea;
+            color: #8b2d2d;
+        }
+
+        #auth-status {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Блок 1: Форма входа -->
+    <div id="login-section">
+        <h1>Вход в систему</h1>
+        <div class="form-group">
+            <label for="login">Логин</label>
+            <input type="text" id="login" value="admin">
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" value="admin">
+        </div>
+        <button onclick="login()">Войти</button>
+        <div id="auth-error" style="color: red; margin-top: 10px; display: none;"></div>
+    </div>
+
+    <!-- Блок 2: Форма создания проекта (скрыта по умолчанию) -->
+    <div id="main-section" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Создать проект</h1>
+            <button class="btn-logout" onclick="logout()">Выйти</button>
+        </div>
+        <p>Прототип «Базы знаний». Заполните форму и приложите файл.</p>
+
+        <div class="form-group">
+            <label for="name">Название проекта *</label>
+            <input type="text" id="name" placeholder="Например: Мой проект" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Описание</label>
+            <textarea id="description" placeholder="Краткое описание проекта"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="file">Файл</label>
+            <input type="file" id="file">
+        </div>
+
+        <button onclick="createProject()">Создать проект</button>
+
+        <div id="result"></div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        // При загрузке страницы проверяем, есть ли сохраненный токен
+        window.onload = () => {
+            const token = localStorage.getItem('session_token');
+            if (token) {
+                showMainSection();
+            }
+        };
+
+        // --- ЛОГИКА АВТОРИЗАЦИИ ---
+        function login() {
+            const loginValue = document.getElementById('login').value;
+            const passwordValue = document.getElementById('password').value;
+            const authError = document.getElementById('auth-error');
+
+            authError.style.display = 'none';
+
+            fetch('/api/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: loginValue, password: passwordValue })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        authError.textContent = 'Ошибка: ' + data.error.message;
+                        authError.style.display = 'block';
+                    } else {
+                        // Сохраняем токен в браузере
+                        localStorage.setItem('session_token', data.session_id);
+                        showMainSection();
+                    }
+                })
+                .catch(err => {
+                    authError.textContent = 'Ошибка сети: ' + err.message;
+                    authError.style.display = 'block';
+                });
+        }
+
+        function logout() {
+            const token = localStorage.getItem('session_token');
+
+            // Отправляем запрос на сервер для удаления сессии
+            fetch('/api/v1/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            }).finally(() => {
+                // В любом случае очищаем токен в браузере и показываем форму входа
+                localStorage.removeItem('session_token');
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('main-section').style.display = 'none';
+            });
+        }
+
+        function showMainSection() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('main-section').style.display = 'block';
+        }
+
+        // --- ЛОГИКА СОЗДАНИЯ ПРОЕКТА (твоя старая логика) ---
+        function createProject() {
+            const name = document.getElementById('name').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const fileInput = document.getElementById('file');
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            const token = localStorage.getItem('session_token');
+
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            if (!name) {
+                errorDiv.textContent = 'Введите название проекта';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            const sendRequest = (fileBase64, fileName) => {
+                const body = {
+                    name: name,
+                    description: description,
+                    file_name: fileName,
+                    file_base64: fileBase64
+                };
+
+                fetch('/api/v1/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token // <--- Передаем токен!
+                    },
+                    body: JSON.stringify(body)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            errorDiv.textContent = 'Ошибка: ' + data.error.code + ' — ' + data.error.message;
+                            errorDiv.style.display = 'block';
+
+                            // Если сессия истекла (401), разлогиниваем
+                            if (data.error.code === 'UNAUTHORIZED') logout();
+                        } else {
+                            resultDiv.textContent = '✓ Проект создан!\n\n' + JSON.stringify(data, null, 2);
+                            resultDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(err => {
+                        errorDiv.textContent = 'Ошибка сети: ' + err.message;
+                        errorDiv.style.display = 'block';
+                    });
+            };
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    sendRequest(base64, file.name);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                sendRequest('', '');
+            }
+        }
+    </script>
+</body>
+</html>

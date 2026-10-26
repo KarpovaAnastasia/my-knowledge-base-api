@@ -1,0 +1,6 @@
+build/
+out/
+.vscode/
+*.exe
+postgres_data/
+.vs/
