@@ -12,4 +12,6 @@ namespace kb::api::stubs {
 
         void deleteSession(const std::string& token); // завершение сессии
     };
+
+    extern StubSessionService globalSessionService;
 }

@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libbrotli-dev \
     libpq-dev \
     postgresql-client \
+    libgtest-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/drogonframework/drogon.git /tmp/drogon \

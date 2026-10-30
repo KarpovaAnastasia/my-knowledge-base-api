@@ -5,7 +5,6 @@
 
 namespace kb::api {
     static stubs::StubUserService stubUserService;
-    static stubs::StubSessionService stubSessionService;
 
     void registerAuthEndpoints() {
         drogon::app().registerHandler(
@@ -45,8 +44,8 @@ namespace kb::api {
                         return;
                     }
 
-                    // создаем сессию и получаем токен
-                    std::string token = stubSessionService.createSession(user->id);
+                    // создаем сессию и получаем токен 
+                    std::string token = stubs::globalSessionService.createSession(user->id);
 
                     // формируем ответ
                     Json::Value body;
@@ -74,7 +73,7 @@ namespace kb::api {
                     // проверяем, что заголовок есть и начинается с "Bearer "
                     if (authHeader.rfind("Bearer ", 0) == 0) {
                         std::string token = authHeader.substr(7); // отрезаем слово "Bearer "
-                        stubSessionService.deleteSession(token);  // удаляем сессию
+                        stubs::globalSessionService.deleteSession(token);  // удаляем сессию
                     }
 
                     // возвращаем 204 No Content (успешно, но нечего возвращать)
@@ -97,8 +96,8 @@ namespace kb::api {
                         token = authHeader.substr(7);
                     }
 
-                    // проверяем валидность токена
-                    auto userId = stubSessionService.validateSession(token);
+                    // проверяем валидность токена 
+                    auto userId = stubs::globalSessionService.validateSession(token);
 
                     // если токена нет или он просрочен
                     if (!userId) {

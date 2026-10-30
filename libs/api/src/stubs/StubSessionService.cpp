@@ -10,7 +10,7 @@ namespace kb::api::stubs {
     };
 
     
-    static std::unordered_map<std::string, SimpleSession> activeSessions;// словарь, где храним активные сессии 
+    std::unordered_map<std::string, SimpleSession> activeSessions;// словарь, где храним активные сессии 
 
     std::string StubSessionService::createSession(const std::string& userId) {
         // генерируем простой случайный токен (просто рандомное число в виде строки)
@@ -46,4 +46,6 @@ namespace kb::api::stubs {
         // просто удаляем токен из словаря при выходе
         activeSessions.erase(token);
     }
+
+    StubSessionService globalSessionService;
 }
